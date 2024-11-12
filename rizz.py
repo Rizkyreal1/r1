@@ -4,8 +4,8 @@ from email.mime.multipart import MIMEMultipart
 import time
 
 def kirim_email(penerima, subjek, body):
-    sender_email = "akun2api@gmail.com"
-    sender_password = "password_akun_email_anda"
+    sender_email = "akun2api@gmail.com"  # Ganti dengan email pengirim
+    sender_password = "password_akun_email_anda"  # Ganti dengan password email pengirim
 
     # Membuat pesan email
     message = MIMEMultipart()
@@ -17,7 +17,7 @@ def kirim_email(penerima, subjek, body):
     # Mengirim email
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
+            server.starttls()  # Mengamankan koneksi
             server.login(sender_email, sender_password)
             server.sendmail(sender_email, penerima, message.as_string())
             print("[*] Email terkirim!")
