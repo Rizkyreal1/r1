@@ -31,23 +31,22 @@ def tampilkan_menu():
          /+/++//                                   
   *   * /+/++//                                    
    \\ /  |/__//                                     
- {X}v{X}|MBF|==========.                           
+ {X}v{X}|HYP|==========.                           
    (')  /'|'\           \\                          
        /  \\  \\          '                          
-       \\_  \\_ \\_   ___MBF 3.0___                   
+       \\_  \\_ \\_   ___HYP 3.0___                   
                                                    
  * MULTI MAX                       
- * PIRMANSX                                        
- * https://github.com/pirmansx                     
- * https://facebook.com/groups/164201767529837     
- * https://pirmansx.waper.com                      
+ * HYPEZX                                        
+ * https://github.com/Rizkyreal                     
+ * https://facebook.com                     
 .======================.                           
 |  AMBIL ID DARI.....  |                           
 '======================'                           
 #1 DAFTAR TEMAN                                    
 #2 ANGGOTA GROUP                                   
 #3 KELUAR...                                       
-[?] PILIH:1                                        
+[?] PILIH:                                        
 [*] Login FB dulu bos...                           
     """)
 
