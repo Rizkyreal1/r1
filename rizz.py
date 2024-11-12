@@ -49,9 +49,6 @@ def tampilkan_menu():
 #3 KELUAR...                                       
 [?] PILIH:1                                        
 [*] Login FB dulu bos...                           
-[?] Email/HP:                                   
-[?] Kata Sandi:                               
-[*] Sedang Login....
     """)
 
 def main():
