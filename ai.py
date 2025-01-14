@@ -120,30 +120,27 @@ async def buy_handler(update: Update, context: CallbackContext):
     product_name = " ".join(product_key).capitalize()
     product_price = PRODUCT_PRICES.get("_".join(product_key), 0)
 
-    # Menampilkan pesan sementara
-    waiting_message = await query.message.reply_text("⏳ Sedang memproses pembayaran Anda. Mohon tunggu sebentar...")
-    
+    # Hapus pesan sebelumnya
+    await query.message.delete()
+
     # Simulasi waktu pemrosesan (5 detik)
     time.sleep(5)
-    
-    # Hapus pesan sementara
-    await waiting_message.delete()
 
     # Menyusun invoice pembayaran
-    text = f"""🔰 Payment Invoice
+    text = f"""🔰 **Invoice Pembayaran**
 
-Detail:
-➜ Tanggal: {time.strftime('%d/%m/%Y, %H:%M')}
-➜ Nama Produk: {product_name}
-➜ Total Item: 1x
-➜ Harga: {product_price:,.2f}
-➜ Fee: 0
-➜ Total Dibayar: {product_price:,.2f}
+📅 **Detail Transaksi**:  
+➜ **Tanggal**: {time.strftime('%d/%m/%Y, %H:%M')}  
+➜ **Nama Produk**: {product_name}  
+➜ **Total Item**: 1x  
+➜ **Harga**: Rp {product_price:,.2f}  
+➜ **Fee**: Rp 0  
+➜ **Total Dibayar**: Rp {product_price:,.2f}  
 
-⚠️ Mohon segera melakukan pembayaran dengan memindai kode QR yang terlampir.  
-💳 Pastikan jumlah pembayaran sesuai dengan nominal yang tertera pada invoice: Rp {product_price:,.2f}.  
+⚠️ Panduan Pembayaran:  
+Silakan lakukan pembayaran dengan memindai kode QRIS Tersebut.  
+💳 Pastikan nominal pembayaran sesuai dengan total yang tertera pada invoice.  
 
-⏳ Batas waktu pembayaran adalah **30 menit**. Jika pembayaran tidak diselesaikan dalam waktu ini, pesanan Anda akan dibatalkan secara otomatis.
     """
 
     # Gambar QR untuk pembayaran (QR ini harus diunggah dan pathnya disesuaikan)
@@ -157,7 +154,7 @@ Detail:
 
 # Fungsi utama
 if __name__ == "__main__":
-    app = ApplicationBuilder().token("8185029818:AAHacF1RJ9setY_Zo-TdEDr84yKwRzRoT_g").build()
+    app = ApplicationBuilder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
 
     # Tambahkan handler untuk /start dan tombol
     app.add_handler(CommandHandler("start", start))
