@@ -148,25 +148,12 @@ Harap segera lakukan pembayaran sebelum 30 Menit.
         caption=text
     )
 
-# Fungsi untuk perintah /carabuy
-async def carabuy(update: Update, context: CallbackContext):
-    text = """📚 Cara Membeli Produk:
-
-1️⃣ Pilih layanan yang tersedia.
-2️⃣ Klik produk yang ingin dibeli.
-3️⃣ Konfirmasi pembelian Anda.
-4️⃣ Lakukan pembayaran menggunakan QRIS yang disediakan.
-
-"""
-    await update.message.reply_text(text)
-
 # Fungsi utama
 if __name__ == "__main__":
-    app = ApplicationBuilder().token("8185029818:AAEIcDBCQ3GBSjZAb5yZyFMFnbFduRFQMWE").build()
+    app = ApplicationBuilder().token("8185029818:AAHacF1RJ9setY_Zo-TdEDr84yKwRzRoT_g").build()
 
-    # Tambahkan handler untuk /start, /carabuy dan tombol
+    # Tambahkan handler untuk /start dan tombol
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("carabuy", carabuy))
     app.add_handler(CallbackQueryHandler(product_details, pattern='^(digitalocean|alibaba|aws|menu_awal)$'))
     app.add_handler(CallbackQueryHandler(confirm_purchase, pattern='^confirm_.*$'))
     app.add_handler(CallbackQueryHandler(buy_handler, pattern='^buy_.*$'))
