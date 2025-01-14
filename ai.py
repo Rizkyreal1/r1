@@ -135,8 +135,7 @@ Detail:
 ➜ Fee: 0
 ➜ Total Dibayar: {product_price:,.2f}
 
-Silahkan Melakukan Pembayaran Dengan Scan Qris Berikut
-Harap segera lakukan pembayaran sebelum 30 Menit.
+Silahkan Melakukan Pembayaran Dengan Scan Qris Berikut dan pastikan nominal sama dengan yang di invoice Harap segera lakukan pembayaran sebelum 30 Menit.
     """
 
     # Gambar QR untuk pembayaran (QR ini harus diunggah dan pathnya disesuaikan)
