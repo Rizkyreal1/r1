@@ -1,136 +1,175 @@
-import asyncio
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackContext
 import time
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, CallbackContext
 
 # Kamus harga produk
 PRODUCT_PRICES = {
-    "Digital Ocean 10 Drop": 120000,
-    "Digital Ocean 3 Drop": 90000,
-    "Alibaba 4GB 2CPU (3 Month)": 45000,
-    "Alibaba 1GB 1CPU (1 Year)": 45000,
-    "AWS Free Tier": 140000,
+    "digitalocean_10": 120000.00,
+    "digitalocean_3": 90000.00,
+    "alibaba_3month": 45000.00,
+    "alibaba_1year": 45000.00,
+    "aws": 140000.00,
 }
 
-# Fungsi untuk /start dan /buy
-async def start(update: Update, context: CallbackContext):
-    text = """📦 *Panduan Pembelian:*
+# Fungsi untuk perintah /start
+async def start(update: Update, context: CallbackContext, query_message=None):
+    user = update.effective_user
+    username = f"@{user.username}" if user.username else user.first_name
+
+    text = f"""Hello 👻
+
+ — Hai, {username} 👋🏻
+                      
+ Selamat datang di HYPEZ STORE
+   • Total User Bot: 🙍🏻‍♂️ 1723 Orang
+   • Total Transaksi Terselesaikan: 7489x
+
+Pilih layanan cloud di bawah ini untuk melihat detail produk:
+    """
+    keyboard = [
+        [InlineKeyboardButton("DigitalOcean", callback_data='digitalocean')],
+        [InlineKeyboardButton("Alibaba Cloud", callback_data='alibaba')],
+        [InlineKeyboardButton("AWS", callback_data='aws')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    if query_message:
+        await query_message.edit_text(text, reply_markup=reply_markup)
+    else:
+        await update.message.reply_text(text, reply_markup=reply_markup)
+
+# Fungsi untuk detail produk
+async def product_details(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == 'digitalocean':
+        text = """1. DigitalOcean
+Digital Ocean 10 Drop CC
+Price ➜ 120.000.00
+
+Digital Ocean 3 Drop CC
+Price ➜ 90.000.00"""
+        keyboard = [
+            [InlineKeyboardButton("Digital Ocean 10 Drop", callback_data='confirm_digitalocean_10')],
+            [InlineKeyboardButton("Digital Ocean 3 Drop", callback_data='confirm_digitalocean_3')],
+            [InlineKeyboardButton("Kembali", callback_data='menu_awal')],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.message.edit_text(text, reply_markup=reply_markup)
+
+    elif query.data == 'alibaba':
+        text = """2. AlibabaCloud
+Alibaba 4gb 2cpu 3 month
+Price ➜ 45.000.00
+
+Alibaba 1gb 1cpu 1 year
+Price ➜ 45.000.00"""
+        keyboard = [
+            [InlineKeyboardButton("4gb 2cpu 3 Month", callback_data='confirm_alibaba_3month')],
+            [InlineKeyboardButton("1gb 1cpu 1 Year", callback_data='confirm_alibaba_1year')],
+            [InlineKeyboardButton("Kembali", callback_data='menu_awal')],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.message.edit_text(text, reply_markup=reply_markup)
+
+    elif query.data == 'aws':
+        text = """3. Amazon Web Service
+AWS Free Tier
+Price ➜ 140.000.00"""
+        keyboard = [
+            [InlineKeyboardButton("AWS Free Tier", callback_data='confirm_aws')],
+            [InlineKeyboardButton("Kembali", callback_data='menu_awal')],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await query.message.edit_text(text, reply_markup=reply_markup)
+
+    elif query.data == 'menu_awal':
+        await start(update, context, query.message)
+
+# Fungsi untuk konfirmasi pembelian
+async def confirm_purchase(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.answer()
+
+    product_key = query.data.split('_')[1:]  # Mengambil identifier produk
+    product_name = " ".join(product_key).capitalize()
+    product_price = PRODUCT_PRICES.get("_".join(product_key), 0)
+
+    text = f"""⚠️ Konfirmasi Pembelian ⚠️
+
+Detail Produk:
+➜ Nama Produk: {product_name}
+➜ Harga: {product_price:,.2f}
+
+Apakah Anda yakin ingin melanjutkan pembelian ini?
+    """
+    keyboard = [
+        [InlineKeyboardButton("✅ Ya, Lanjutkan", callback_data=f'buy_{"_".join(product_key)}')],
+        [InlineKeyboardButton("❌ Tidak, Kembali", callback_data='menu_awal')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await query.message.edit_text(text, reply_markup=reply_markup)
+
+# Fungsi untuk menangani pembelian
+async def buy_handler(update: Update, context: CallbackContext):
+    query = update.callback_query
+    await query.answer()
+
+    product_key = query.data.split('_')[1:]  # Mengambil identifier produk
+    product_name = " ".join(product_key).capitalize()
+    product_price = PRODUCT_PRICES.get("_".join(product_key), 0)
+
+    # Menunggu 5 detik untuk simulasi pembayaran
+    await query.message.edit_text("Tunggu sebentar...")
+    time.sleep(5)
+
+    # Menyusun invoice pembayaran
+    text = f"""🔰 Payment Invoice
+
+Detail:
+➜ Tanggal: {time.strftime('%d/%m/%Y, %H:%M')}
+➜ Nama Produk: {product_name}
+➜ Total Item: 1x
+➜ Harga: {product_price:,.2f}
+➜ Fee: 0
+➜ Total Dibayar: {product_price:,.2f}
+
+Silahkan Melakukan Pembayaran Dengan Scan Qris Berikut
+Harap segera lakukan pembayaran sebelum 30 Menit.
+    """
+
+    # Gambar QR untuk pembayaran (QR ini harus diunggah dan pathnya disesuaikan)
+    qr_image_path = "xId62njS.jpg"
+
+    # Mengirimkan QR dan Invoice dalam satu pesan
+    await query.message.reply_photo(
+        photo=open(qr_image_path, 'rb'),
+        caption=text
+    )
+
+# Fungsi untuk perintah /carabuy
+async def carabuy(update: Update, context: CallbackContext):
+    text = """📚 Cara Membeli Produk:
+
 1️⃣ Pilih layanan yang tersedia.
 2️⃣ Klik produk yang ingin dibeli.
 3️⃣ Konfirmasi pembelian Anda.
 4️⃣ Lakukan pembayaran menggunakan QRIS yang disediakan.
 
-Pilih layanan untuk melanjutkan pembelian:
 """
-    keyboard = ReplyKeyboardMarkup(
-        [["DigitalOcean", "Alibaba Cloud", "AWS"], ["Batal"]],
-        resize_keyboard=True,
-    )
-    await update.message.reply_text(text, reply_markup=keyboard, parse_mode="Markdown")
-
-# Fungsi untuk menangani pilihan layanan
-async def service_handler(update: Update, context: CallbackContext):
-    text = update.message.text
-    if text == "DigitalOcean":
-        reply = """Produk DigitalOcean tersedia:
-- Digital Ocean 10 Drop ➜ Rp120.000
-- Digital Ocean 3 Drop ➜ Rp90.000"""
-        keyboard = ReplyKeyboardMarkup(
-            [["Digital Ocean 10 Drop", "Digital Ocean 3 Drop"], ["Kembali"]],
-            resize_keyboard=True,
-        )
-    elif text == "Alibaba Cloud":
-        reply = """Produk Alibaba Cloud tersedia:
-- Alibaba 4GB 2CPU (3 Month) ➜ Rp45.000
-- Alibaba 1GB 1CPU (1 Year) ➜ Rp45.000"""
-        keyboard = ReplyKeyboardMarkup(
-            [["Alibaba 4GB 2CPU (3 Month)", "Alibaba 1GB 1CPU (1 Year)"], ["Kembali"]],
-            resize_keyboard=True,
-        )
-    elif text == "AWS":
-        reply = """Produk AWS tersedia:
-- AWS Free Tier ➜ Rp140.000"""
-        keyboard = ReplyKeyboardMarkup([["AWS Free Tier"], ["Kembali"]], resize_keyboard=True)
-    elif text == "Batal":
-        reply = "Transaksi dibatalkan. Ketik /start untuk memulai kembali."
-        keyboard = ReplyKeyboardRemove()
-    else:
-        reply = "Pilihan tidak valid. Ketik /start untuk memulai kembali."
-        keyboard = ReplyKeyboardRemove()
-    await update.message.reply_text(reply, reply_markup=keyboard)
-
-# Fungsi untuk konfirmasi pembelian
-async def confirm_purchase(update: Update, context: CallbackContext):
-    product_name = update.message.text
-    if product_name not in PRODUCT_PRICES:
-        await update.message.reply_text("Produk tidak valid. Ketik /start untuk memulai kembali.")
-        return
-
-    price = PRODUCT_PRICES[product_name]
-    text = f"""⚠️ *Konfirmasi Pembelian* ⚠️
-
-Detail Produk:
-- Nama Produk: {product_name}
-- Harga: Rp{price:,.0f}
-
-Apakah Anda yakin ingin melanjutkan pembelian ini?
-"""
-    keyboard = ReplyKeyboardMarkup([["✅ Lanjutkan", "❌ Batal"]], resize_keyboard=True)
-    context.user_data["product"] = product_name
-    context.user_data["price"] = price
-    await update.message.reply_text(text, reply_markup=keyboard, parse_mode="Markdown")
-
-# Fungsi untuk menangani pembayaran
-async def payment_handler(update: Update, context: CallbackContext):
-    if update.message.text == "✅ Lanjutkan":
-        product_name = context.user_data.get("product")
-        price = context.user_data.get("price")
-
-        if not product_name or not price:
-            await update.message.reply_text("Data produk tidak valid. Ketik /start untuk memulai kembali.")
-            return
-
-        # Simulasi proses pembayaran
-        await update.message.reply_text("Tunggu sebentar...")
-        await asyncio.sleep(3)
-
-        text = f"""🔰 *Payment Invoice* 🔰
-
-**Detail:**
-- **Tanggal:** {time.strftime('%d/%m/%Y, %H:%M')}
-- **Nama Produk:** {product_name}
-- **Harga:** Rp{price:,.0f}
-- **Fee:** Rp0
-- **Total Dibayar:** Rp{price:,.0f}
-
-📌 *Silahkan melakukan pembayaran dengan scan QRIS berikut.*
-Harap segera lakukan pembayaran sebelum 30 menit, dan pastikan nominal sesuai dengan invoice
-"""
-        qr_image_path = "xId62njS.jpg"  # Path gambar QRIS
-        await update.message.reply_photo(
-            photo=open(qr_image_path, 'rb'),
-            caption=text,
-            parse_mode="Markdown",
-        )
-
-        # Menghapus data setelah pembayaran selesai
-        context.user_data.clear()
-
-    elif update.message.text == "❌ Batal":
-        await update.message.reply_text(
-            "Pembelian dibatalkan. Ketik /start untuk memulai kembali.",
-            reply_markup=ReplyKeyboardRemove(),
-        )
+    await update.message.reply_text(text)
 
 # Fungsi utama
 if __name__ == "__main__":
     app = ApplicationBuilder().token("8185029818:AAEIcDBCQ3GBSjZAb5yZyFMFnbFduRFQMWE").build()
 
-    # Tambahkan handler
-    app.add_handler(CommandHandler(["start", "buy"], start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, service_handler))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, confirm_purchase))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, payment_handler))
+    # Tambahkan handler untuk /start, /carabuy dan tombol
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("carabuy", carabuy))
+    app.add_handler(CallbackQueryHandler(product_details, pattern='^(digitalocean|alibaba|aws|menu_awal)$'))
+    app.add_handler(CallbackQueryHandler(confirm_purchase, pattern='^confirm_.*$'))
+    app.add_handler(CallbackQueryHandler(buy_handler, pattern='^buy_.*$'))
 
     print("Bot sedang berjalan...")
     app.run_polling()
