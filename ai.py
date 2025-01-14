@@ -141,9 +141,7 @@ Detail:
 ➜ Total Dibayar: {product_price:,.2f}
 
 ⚠️ Mohon segera melakukan pembayaran dengan memindai kode QR yang terlampir.  
-💳 Pastikan jumlah pembayaran sesuai dengan nominal yang tertera pada invoice: Rp {product_price:,.2f}.  
-
-⏳ Batas waktu pembayaran adalah **30 menit**. Jika pembayaran tidak diselesaikan dalam waktu ini, pesanan Anda akan dibatalkan secara otomatis.
+💳 Pastikan jumlah pembayaran sesuai dengan nominal yang tertera pada invoice: Rp {product_price:,.2f}.
     """
 
     # Gambar QR untuk pembayaran (QR ini harus diunggah dan pathnya disesuaikan)
