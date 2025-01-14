@@ -46,10 +46,10 @@ async def product_details(update: Update, context: CallbackContext):
     if query.data == 'digitalocean':
         text = """1. DigitalOcean
 Digital Ocean 10 Drop CC
-Price ➜ 120.000.00
+Price ➜ 120,000.00
 
 Digital Ocean 3 Drop CC
-Price ➜ 90.000.00"""
+Price ➜ 90,000.00"""
         keyboard = [
             [InlineKeyboardButton("Digital Ocean 10 Drop", callback_data='confirm_digitalocean_10')],
             [InlineKeyboardButton("Digital Ocean 3 Drop", callback_data='confirm_digitalocean_3')],
@@ -61,10 +61,10 @@ Price ➜ 90.000.00"""
     elif query.data == 'alibaba':
         text = """2. AlibabaCloud
 Alibaba 4gb 2cpu 3 month
-Price ➜ 45.000.00
+Price ➜ 45,000.00
 
 Alibaba 1gb 1cpu 1 year
-Price ➜ 45.000.00"""
+Price ➜ 45,000.00"""
         keyboard = [
             [InlineKeyboardButton("4gb 2cpu 3 Month", callback_data='confirm_alibaba_3month')],
             [InlineKeyboardButton("1gb 1cpu 1 Year", callback_data='confirm_alibaba_1year')],
@@ -76,7 +76,7 @@ Price ➜ 45.000.00"""
     elif query.data == 'aws':
         text = """3. Amazon Web Service
 AWS Free Tier
-Price ➜ 140.000.00"""
+Price ➜ 140,000.00"""
         keyboard = [
             [InlineKeyboardButton("AWS Free Tier", callback_data='confirm_aws')],
             [InlineKeyboardButton("Kembali", callback_data='menu_awal')],
@@ -120,9 +120,14 @@ async def buy_handler(update: Update, context: CallbackContext):
     product_name = " ".join(product_key).capitalize()
     product_price = PRODUCT_PRICES.get("_".join(product_key), 0)
 
-    # Menunggu 5 detik untuk simulasi pembayaran
-    await query.message.edit_text("Tunggu sebentar...")
+    # Menampilkan pesan sementara
+    waiting_message = await query.message.reply_text("⏳ Sedang memproses pembayaran Anda. Mohon tunggu sebentar...")
+    
+    # Simulasi waktu pemrosesan (5 detik)
     time.sleep(5)
+    
+    # Hapus pesan sementara
+    await waiting_message.delete()
 
     # Menyusun invoice pembayaran
     text = f"""🔰 Payment Invoice
@@ -135,8 +140,10 @@ Detail:
 ➜ Fee: 0
 ➜ Total Dibayar: {product_price:,.2f}
 
-Silahkan Melakukan Pembayaran Dengan Scan Qris Berikut
-Harap segera lakukan pembayaran sebelum 30 Menit.
+⚠️ Mohon segera melakukan pembayaran dengan memindai kode QR yang terlampir.  
+💳 Pastikan jumlah pembayaran sesuai dengan nominal yang tertera pada invoice: Rp {product_price:,.2f}.  
+
+⏳ Batas waktu pembayaran adalah **30 menit**. Jika pembayaran tidak diselesaikan dalam waktu ini, pesanan Anda akan dibatalkan secara otomatis.
     """
 
     # Gambar QR untuk pembayaran (QR ini harus diunggah dan pathnya disesuaikan)
