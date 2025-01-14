@@ -120,14 +120,8 @@ async def buy_handler(update: Update, context: CallbackContext):
     product_name = " ".join(product_key).capitalize()
     product_price = PRODUCT_PRICES.get("_".join(product_key), 0)
 
-    # Menampilkan pesan sementara
-    waiting_message = await query.message.reply_text("⏳ Sedang memproses pembayaran Anda. Mohon tunggu sebentar...")
-    
-    # Simulasi waktu pemrosesan (5 detik)
-    time.sleep(5)
-    
-    # Hapus pesan sementara
-    await waiting_message.delete()
+    # Hapus pesan konfirmasi sebelumnya (tombol "Ya, Lanjutkan" & "Tidak, Kembali")
+    await query.message.delete()
 
     # Menyusun invoice pembayaran
     text = f"""🔰 Payment Invoice
