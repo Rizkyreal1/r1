@@ -1,9 +1,8 @@
 from pyrogram import Client, filters
-from pyrogram.handlers import MessageHandler
 import os
 
 # Inisialisasi bot
-app = Client("my_bot", bot_token="YOUR_BOT_TOKEN")
+app = Client("my_bot", bot_token="8185029818:AAF-4ckmWh-DudFnrNSw2J4FLEcPdiyoKuA")
 
 # Memuat plugin dari folder 'plugins'
 plugin_folder = "plugins"
