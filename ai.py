@@ -3,7 +3,7 @@ import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 # Token bot Telegram
-BOT_TOKEN = "7942538474:AAGttD78Vi5u29BDsc9_3_bjXWkEFZDjrj8"
+BOT_TOKEN = "7942538474:AAFOsYXylG48VhTbqXOLj_R9KLFtMCyqWN4"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # Informasi Saweria
