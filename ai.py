@@ -1,8 +1,16 @@
 import time
+import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, CallbackContext
 
-# Kamus harga produk
+# Token bot Telegram dan informasi Saweria
+BOT_TOKEN = "8185029818:AAHacF1RJ9setY_Zo-TdEDr84yKwRzRoT_g"
+SAWERIA_EMAIL = "hackerff980k@gmail.com"
+SAWERIA_PASSWORD = "astapa12345"
+SAWERIA_USER_ID = "b849c9df-a51d-468b-98d5-31717f481a1d"
+
+bot = ApplicationBuilder().token(BOT_TOKEN).build()
+
 PRODUCT_PRICES = {
     "digitalocean_10": 120000.00,
     "digitalocean_3": 90000.00,
@@ -10,6 +18,26 @@ PRODUCT_PRICES = {
     "alibaba_1year": 45000.00,
     "aws": 140000.00,
 }
+
+# Fungsi untuk membuat pembayaran Saweria
+def create_payment(amount, name, message):
+    url = "https://itzpire.com/saweria/payment/create"
+    params = {
+        "amount": amount,
+        "name": name,
+        "email": SAWERIA_EMAIL,
+        "user_id": SAWERIA_USER_ID,
+        "msg": message
+    }
+    response = requests.get(url, params=params)
+    return response.json() if response.status_code == 200 else None
+
+# Fungsi untuk mengecek status pembayaran
+def check_payment_status(payment_id):
+    url = "https://itzpire.com/saweria/payment/check"
+    params = {"id": payment_id, "user_id": SAWERIA_USER_ID}
+    response = requests.get(url, params=params)
+    return response.json() if response.status_code == 200 else None
 
 # Fungsi untuk perintah /start
 async def start(update: Update, context: CallbackContext, query_message=None):
@@ -111,7 +139,7 @@ Apakah Anda yakin ingin melanjutkan pembelian ini?
     reply_markup = InlineKeyboardMarkup(keyboard)
     await query.message.edit_text(text, reply_markup=reply_markup)
 
-# Fungsi untuk menangani pembelian
+# Fungsi untuk menangani pembelian dan integrasi Saweria
 async def buy_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
@@ -138,20 +166,33 @@ Detail:
 💳 Pastikan jumlah pembayaran sesuai dengan nominal yang tertera pada invoice: Rp {product_price:,.2f}.
     """
 
-    # Gambar QR untuk pembayaran (QR ini harus diunggah dan pathnya disesuaikan)
-    qr_image_path = "xId62njS.jpg"
+    # Proses pembayaran menggunakan Saweria
+    payment = create_payment(product_price, "User", f"Pembelian {product_name}")
+    if payment and payment["status"] == "success":
+        payment_id = payment["data"]["id"]
+        payment_url = payment["data"]["url"]
+        qr_image = payment["data"]["qr_image"]
 
-    # Mengirimkan QR dan Invoice dalam satu pesan
-    await query.message.reply_photo(
-        photo=open(qr_image_path, 'rb'),
-        caption=text
-    )
+        # Mengirimkan QR dan Invoice dalam satu pesan
+        await query.message.reply_photo(
+            photo=open(qr_image, 'rb'),
+            caption=text
+        )
+
+        # Cek status pembayaran setiap 1 menit
+        while True:
+            time.sleep(60)
+            status = check_payment_status(payment_id)
+            if status and status["data"]["status"] == "PAID":
+                await query.message.reply_text("Pembayaran berhasil! Pesanan kamu akan segera diproses.")
+                break
+            else:
+                await query.message.reply_text("Menunggu pembayaran...")
 
 # Fungsi utama
 if __name__ == "__main__":
-    app = ApplicationBuilder().token("8185029818:AAHacF1RJ9setY_Zo-TdEDr84yKwRzRoT_g").build()
-
-    # Tambahkan handler untuk /start dan tombol
+    # Menambahkan handler untuk /start dan tombol
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(product_details, pattern='^(digitalocean|alibaba|aws|menu_awal)$'))
     app.add_handler(CallbackQueryHandler(confirm_purchase, pattern='^confirm_.*$'))
