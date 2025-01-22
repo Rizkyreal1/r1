@@ -4,7 +4,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, CallbackContext
 
 # Token bot Telegram dan informasi Saweria
-BOT_TOKEN = "8185029818:AAHacF1RJ9setY_Zo-TdEDr84yKwRzRoT_g"
+BOT_TOKEN = "8185029818:AAHjSM0tRioIYrNKYJdCuQYkuwkoi2qjnHo"
 SAWERIA_EMAIL = "hackerff980k@gmail.com"
 SAWERIA_PASSWORD = "astapa12345"
 SAWERIA_USER_ID = "b849c9df-a51d-468b-98d5-31717f481a1d"
