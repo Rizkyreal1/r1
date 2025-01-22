@@ -1,154 +1,100 @@
-from pyrogram import Client, filters
-from pyrogram.handlers import MessageHandler
-import os
-from Navy.database import dB
-from Navy.helpers import CMD, Emoji, Tools
+import telebot
+import requests
+import time
 
-# Inisialisasi bot
-app = Client("my_bot", bot_token="8185029818:AAF-4ckmWh-DudFnrNSw2J4FLEcPdiyoKuA")
+# Token bot Telegram kamu
+BOT_TOKEN = "8185029818:AAF-4ckmWh-DudFnrNSw2J4FLEcPdiyoKuA"
+bot = telebot.TeleBot(BOT_TOKEN)
 
-# Fungsi utama saweria
-@CMD.UBOT("saweria")
-async def saweria(client, message):
-    em = Emoji(client)
-    em.get()
-    proses_ = em.get_costum_text()[4]
-    proses = await message.reply(f"{em.proses}**{proses_}**")
-    args = ["login", "payment", "balance", "cekpay"]
-    command = message.command
-    if len(command) < 2 or command[1] not in args:
-        return await proses.edit(
-            f"{em.gagal}**Please give me valid query, only supported `login`, `payment`, `balance`, and `cekpay`]**"
-        )
-    if command[1] == "login":
-        reply = message.reply_to_message
-        if not reply:
-            return await proses.edit(
-                f"{em.gagal}**Please reply to message with format: aku1244haha@gmail.com pasword123**"
-            )
-        mail, pw = Tools.parse_text(reply)
-        url = f"https://itzpire.com/saweria/login?email={mail}&password={pw}"
-        result = await Tools.fetch.get(url)
-        if result.status_code == 200:
-            data = result.json()
-            msg = f"""
-<blockquote>{em.sukses}**Succesfully login saweria!!
+# Informasi Saweria
+SAWERIA_EMAIL = "hackerff980k@gmail.com"
+SAWERIA_PASSWORD = "astapa12345"
+SAWERIA_USER_ID = "b849c9df-a51d-468b-98d5-31717f481a1d"
 
-user_id: `{data['data']['user_id']}`
-token: `{data['data']['token']}`
+# Fungsi untuk login Saweria (opsional jika butuh autentikasi)
+def login_saweria(email, password):
+    url = "https://itzpire.com/saweria/login"
+    params = {"email": email, "password": password}
+    response = requests.get(url, params=params)
+    return response.json()
 
-Please dont share this data!!**</blockquote>"""
-            kwarg = {
-                "email": mail,
-                "pw": pw,
-                "user_id": data["data"]["user_id"],
-                "token": data["data"]["token"],
-            }
-            dB.set_var(client.me.id, "SAWERIA_LOGIN", kwarg)
-            return await proses.edit(msg)
-        else:
-            return await proses.edit(
-                f"{em.gagal}**Failed to fetch data**: {result.status_code}"
-            )
-    elif command[1] == "balance":
-        info = dB.get_var(client.me.id, "SAWERIA_LOGIN")
-        if not info:
-            return await proses.edit(
-                f"{em.gagal}**Please login first to make payment!!**"
-            )
-        mail = info["email"]
-        pw = info["pw"]
-        url = f"https://itzpire.com/saweria/balance?email={mail}&password={pw}"
-        result = await Tools.fetch.get(url)
-        if result.status_code == 200:
-            data = result.json()
-            msg = f"""
-<blockquote>{em.sukses}**Your balance in saweria!!
+# Fungsi untuk membuat pembayaran Saweria
+def create_payment(amount, name, message):
+    url = "https://itzpire.com/saweria/payment/create"
+    params = {
+        "amount": amount,
+        "name": name,
+        "email": SAWERIA_EMAIL,
+        "user_id": SAWERIA_USER_ID,
+        "msg": message
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()  # Mengembalikan data pembayaran
+    else:
+        return None
 
-Saldo Pending: `{data['data']['pending']}`
-Saldo Available: `{data['data']['available']}`
-Mata Uang: `{data['data']['currency']}`**</blockquote>"""
-            return await proses.edit(msg)
-        else:
-            return await proses.edit(
-                f"{em.gagal}**Failed to fetch data**: {result.status_code}"
-            )
-    elif command[1] == "cekpay":
-        info = dB.get_var(client.me.id, "SAWERIA_LOGIN")
-        if not info:
-            return await proses.edit(
-                f"{em.gagal}**Please login first to make payment!!**"
-            )
-        if len(message.command) < 3:
-            return await proses.edit(
-                f"{em.gagal}**Please give me id payment. Example: `{message.text.split()[0]} cekpay 5f694d83-4b60-4640-a22c-1da47d224a63`**"
-            )
-        id_pay = message.text.split(None, 2)[2]
-        url = f"https://itzpire.com/saweria/check-payment?id={id_pay}&user_id={info['user_id']}"
-        result = await Tools.fetch.get(url)
-        if result.status_code == 200:
-            data = result.json()
-            status = data["status"]
-            teks = data["msg"]
-            if teks == "OA4XSN":
-                msg = f"""
-<b><blockquote>{em.sukses}Status Payment!!
-ID: `{id_pay}`
-Status: Succesed
-Message: Successful payment !!</blockquote></b>"""
-            else:
-                msg = f"""
-<b><blockquote>{em.sukses}Status Payment!!
-ID: `{id_pay}`
-Status: {status}
-Message: {teks}</blockquote></b>"""
-            return await proses.edit(msg)
-        else:
-            return await proses.edit(
-                f"{em.gagal}**Failed to fetch data**: {result.status_code}"
-            )
-    elif command[1] == "payment":
-        info = dB.get_var(client.me.id, "SAWERIA_LOGIN")
-        if not info:
-            return await proses.edit(
-                f"{em.gagal}**Please login first to make payment!!**"
-            )
-        reply = message.reply_to_message
-        amount = reply.text.split()[0] if reply else message.text.split(None, 3)[2]
-        thanks = "Thanks for payment." if not reply else reply.text.split(maxsplit=1)[1]
-        email = info["email"]
-        user_id = info["user_id"]
-        url = f"https://itzpire.com/saweria/create-payment?amount={amount}&name={client.me.first_name}&email={email}&user_id={user_id}&msg={thanks}"
-        result = await Tools.fetch.get(url)
-        if result.status_code == 200:
-            data = result.json()
-            total = data["data"]["amount"]
-            id_payment = data["data"]["id"]
-            currency = data["data"]["currency"]
-            pesan = data["data"]["message"]
-            expired = data["data"]["expired_at"]
-            type = data["data"]["payment_type"]
-            qris = f"{total}.png"
-            await client.bash(f"wget {data['data']['qr_image']} -O {qris}")
-            msg = f"""
-<blockquote><b>{em.sukses}Successed Generate Payment!!
-Total: {total}
-ID: `{id_payment}`
-Currency: {currency}
-Type: {type}
-Expired at: {expired}
-Message: {pesan}</b></blockquote>"""
-            try:
-                await proses.delete()
-                return await message.reply_photo(qris, caption=msg)
-            except Exception:
-                return await proses.edit(
-                    f"{em.gagal}**Failed to send qris image!!**\n\n" + msg
-                )
-        else:
-            return await proses.edit(
-                f"{em.gagal}**Failed to fetch data**: {result.status_code}"
-            )
+# Fungsi untuk cek status pembayaran
+def check_payment_status(payment_id):
+    url = "https://itzpire.com/saweria/payment/check"
+    params = {"id": payment_id, "user_id": SAWERIA_USER_ID}
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
 
 # Memulai bot
-app.run()
+@bot.message_handler(commands=["start"])
+def welcome(message):
+    bot.reply_to(message, "Halo! Selamat datang di toko kami. Ketik /order untuk memulai pesanan.")
+
+# Menangani pesanan user
+@bot.message_handler(commands=["order"])
+def take_order(message):
+    bot.send_message(message.chat.id, "Silakan masukkan nama barang dan jumlah yang ingin dipesan (contoh: 'Baju 2'):")
+    bot.register_next_step_handler(message, process_order)
+
+def process_order(message):
+    try:
+        order = message.text
+        bot.send_message(message.chat.id, f"Pesanan kamu: {order}\nMasukkan nominal pembayaran (contoh: '50000'): ")
+        bot.register_next_step_handler(message, process_payment, order)
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Terjadi kesalahan: {str(e)}")
+
+def process_payment(message, order):
+    try:
+        amount = message.text
+        bot.send_message(message.chat.id, "Masukkan nama kamu untuk pembayaran:")
+        bot.register_next_step_handler(message, create_saweria_payment, order, amount)
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Terjadi kesalahan: {str(e)}")
+
+def create_saweria_payment(message, order, amount):
+    try:
+        name = message.text
+        msg = f"Pembayaran pesanan: {order}"
+        payment = create_payment(amount, name, msg)
+        if payment and payment["status"] == "success":
+            payment_id = payment["data"]["id"]
+            payment_link = payment["data"]["link"]  # Asumsikan API menyediakan link pembayaran
+            bot.send_message(message.chat.id, f"Silakan bayar pesanan kamu:\n\n{payment_link}")
+            bot.send_message(message.chat.id, "Saya akan mengecek status pembayaran setiap 1 menit.")
+            
+            # Cek pembayaran setiap 1 menit
+            while True:
+                time.sleep(60)  # Tunggu 1 menit
+                status = check_payment_status(payment_id)
+                if status and status["data"]["status"] == "PAID":  # Asumsikan "PAID" menandakan pembayaran selesai
+                    bot.send_message(message.chat.id, "Pembayaran berhasil! Pesanan kamu akan segera diproses.")
+                    break
+                else:
+                    bot.send_message(message.chat.id, "Menunggu pembayaran...")
+        else:
+            bot.send_message(message.chat.id, "Gagal membuat pembayaran. Silakan coba lagi.")
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Terjadi kesalahan: {str(e)}")
+
+# Menjalankan bot
+bot.polling()
