@@ -3,7 +3,7 @@ import requests
 import time
 
 # Token bot Telegram
-BOT_TOKEN = "8185029818:AAHjSM0tRioIYrNKYJdCuQYkuwkoi2qjnHo"
+BOT_TOKEN = "7942538474:AAGttD78Vi5u29BDsc9_3_bjXWkEFZDjrj8"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # Informasi Saweria
