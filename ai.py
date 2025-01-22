@@ -1,9 +1,10 @@
 import telebot
 import requests
+import time
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 # Token bot Telegram
-BOT_TOKEN = "7942538474:AAFOsYXylG48VhTbqXOLj_R9KLFtMCyqWN4"
+BOT_TOKEN = "7942538474:AAF-XlLUm2OHMyMQkwBjp_FrUltjNG6vNb4"
 bot = telebot.TeleBot(BOT_TOKEN)
 
 # Informasi Saweria
@@ -105,21 +106,9 @@ def process_payment(call):
     product_name = " ".join(product_key).capitalize()
     product_price = PRODUCT_PRICES["_".join(product_key)]
     payment = create_payment(product_price, call.from_user.username, f"Pembayaran {product_name}")
-    
     if payment and payment.get("status") == "success":
         payment_url = payment["data"]["url"]
-        qr_code_url = payment["data"]["qr_url"]  # Asumsi QR code ada di URL ini
-        additional_info = f"""QR CODE DI SINI
-➜ Nama Produk: {product_name}
-➜ Harga: Rp {product_price:,}"""
-
-        # Mengirim QR code dan informasi tambahan
-        bot.send_message(call.message.chat.id, additional_info)
-        bot.send_photo(call.message.chat.id, qr_code_url, caption="Scan QR code untuk pembayaran.")
-
-        # Jika URL lain perlu ditampilkan, bisa ditambahkan di bawah ini
         bot.send_message(call.message.chat.id, f"Silakan bayar melalui tautan ini:\n{payment_url}")
-
     else:
         bot.send_message(call.message.chat.id, "Gagal memproses pembayaran. Coba lagi nanti.")
 
