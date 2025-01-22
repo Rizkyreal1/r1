@@ -1,6 +1,6 @@
 import telebot
 import requests
-import time
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 # Token bot Telegram
 BOT_TOKEN = "7942538474:AAGttD78Vi5u29BDsc9_3_bjXWkEFZDjrj8"
@@ -10,6 +10,15 @@ bot = telebot.TeleBot(BOT_TOKEN)
 SAWERIA_EMAIL = "hackerff980k@gmail.com"
 SAWERIA_PASSWORD = "astapa12345"
 SAWERIA_USER_ID = "b849c9df-a51d-468b-98d5-31717f481a1d"
+
+# Kamus harga produk
+PRODUCT_PRICES = {
+    "digitalocean_10": 120000,
+    "digitalocean_3": 90000,
+    "alibaba_3month": 45000,
+    "alibaba_1year": 45000,
+    "aws": 140000,
+}
 
 # Fungsi untuk membuat pembayaran Saweria
 def create_payment(amount, name, message):
@@ -31,58 +40,88 @@ def check_payment_status(payment_id):
     response = requests.get(url, params=params)
     return response.json() if response.status_code == 200 else None
 
-# Memulai bot Telegram
+# Fungsi untuk perintah /start
 @bot.message_handler(commands=["start"])
-def welcome(message):
-    bot.reply_to(message, "Halo! Selamat datang di toko kami. Ketik /order untuk memulai pesanan.")
+def start(message):
+    text = """Hello 👻
+    
+Selamat datang di HYPEZ STORE!
+Pilih layanan cloud di bawah ini untuk melihat detail produk:"""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("DigitalOcean", callback_data='digitalocean')],
+        [InlineKeyboardButton("Alibaba Cloud", callback_data='alibaba')],
+        [InlineKeyboardButton("AWS", callback_data='aws')],
+    ])
+    bot.send_message(message.chat.id, text, reply_markup=keyboard)
 
-@bot.message_handler(commands=["order"])
-def take_order(message):
-    bot.send_message(message.chat.id, "Silakan masukkan nama barang dan jumlah yang ingin dipesan (contoh: 'Baju 2'):")
-    bot.register_next_step_handler(message, process_order)
+# Fungsi untuk menangani detail produk
+@bot.callback_query_handler(func=lambda call: call.data in ["digitalocean", "alibaba", "aws"])
+def product_details(call):
+    if call.data == 'digitalocean':
+        text = """DigitalOcean:
+1. 10 Drop CC ➜ Rp 120,000
+2. 3 Drop CC ➜ Rp 90,000"""
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("10 Drop CC", callback_data='buy_digitalocean_10')],
+            [InlineKeyboardButton("3 Drop CC", callback_data='buy_digitalocean_3')],
+        ])
+    elif call.data == 'alibaba':
+        text = """Alibaba Cloud:
+1. 3 Month 4GB 2CPU ➜ Rp 45,000
+2. 1 Year 1GB 1CPU ➜ Rp 45,000"""
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("3 Month", callback_data='buy_alibaba_3month')],
+            [InlineKeyboardButton("1 Year", callback_data='buy_alibaba_1year')],
+        ])
+    elif call.data == 'aws':
+        text = "AWS Free Tier ➜ Rp 140,000"
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("Beli AWS", callback_data='buy_aws')],
+        ])
+    bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=keyboard)
 
-def process_order(message):
-    try:
-        order = message.text
-        bot.send_message(message.chat.id, f"Pesanan kamu: {order}\nMasukkan nominal pembayaran (contoh: '50000'): ")
-        bot.register_next_step_handler(message, process_payment, order)
-    except Exception as e:
-        bot.send_message(message.chat.id, f"Terjadi kesalahan: {str(e)}")
+# Fungsi untuk konfirmasi pembayaran
+@bot.callback_query_handler(func=lambda call: call.data.startswith("buy_"))
+def confirm_purchase(call):
+    product_key = call.data.split("_")[1:]
+    product_name = " ".join(product_key).capitalize()
+    product_price = PRODUCT_PRICES["_".join(product_key)]
+    text = f"""⚠️ Konfirmasi Pembelian ⚠️
 
-def process_payment(message, order):
-    try:
-        amount = message.text
-        bot.send_message(message.chat.id, "Masukkan nama kamu untuk pembayaran:")
-        bot.register_next_step_handler(message, create_saweria_payment, order, amount)
-    except Exception as e:
-        bot.send_message(message.chat.id, f"Terjadi kesalahan: {str(e)}")
+Detail Produk:
+➜ Nama Produk: {product_name}
+➜ Harga: Rp {product_price:,}
 
-def create_saweria_payment(message, order, amount):
-    try:
-        name = message.text
-        msg = f"Pembayaran pesanan: {order}"
-        payment = create_payment(amount, name, msg)
-        if payment and payment["status"] == "success":
-            payment_id = payment["data"]["id"]
-            payment_url = payment["data"]["url"]
-            qr_image = payment["data"]["qr_image"]
+Klik tombol di bawah untuk melanjutkan pembayaran."""
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ Lanjutkan Pembayaran", callback_data=f'pay_{"_".join(product_key)}')],
+    ])
+    bot.edit_message_text(text, call.message.chat.id, call.message.message_id, reply_markup=keyboard)
 
-            bot.send_message(message.chat.id, f"Silakan bayar pesanan kamu melalui tautan berikut:\n{payment_url}")
-            bot.send_photo(message.chat.id, qr_image, caption="Atau gunakan QR code berikut untuk membayar.")
+# Fungsi untuk pembayaran
+@bot.callback_query_handler(func=lambda call: call.data.startswith("pay_"))
+def process_payment(call):
+    product_key = call.data.split("_")[1:]
+    product_name = " ".join(product_key).capitalize()
+    product_price = PRODUCT_PRICES["_".join(product_key)]
+    payment = create_payment(product_price, call.from_user.username, f"Pembayaran {product_name}")
+    
+    if payment and payment.get("status") == "success":
+        payment_url = payment["data"]["url"]
+        qr_code_url = payment["data"]["qr_url"]  # Asumsi QR code ada di URL ini
+        additional_info = f"""QR CODE DI SINI
+➜ Nama Produk: {product_name}
+➜ Harga: Rp {product_price:,}"""
 
-            # Cek status pembayaran setiap 1 menit
-            while True:
-                time.sleep(60)
-                status = check_payment_status(payment_id)
-                if status and status["data"]["status"] == "PAID":
-                    bot.send_message(message.chat.id, "Pembayaran berhasil! Pesanan kamu akan segera diproses.")
-                    break
-                else:
-                    bot.send_message(message.chat.id, "Menunggu pembayaran...")
-        else:
-            bot.send_message(message.chat.id, "Gagal membuat pembayaran. Silakan coba lagi.")
-    except Exception as e:
-        bot.send_message(message.chat.id, f"Terjadi kesalahan: {str(e)}")
+        # Mengirim QR code dan informasi tambahan
+        bot.send_message(call.message.chat.id, additional_info)
+        bot.send_photo(call.message.chat.id, qr_code_url, caption="Scan QR code untuk pembayaran.")
+
+        # Jika URL lain perlu ditampilkan, bisa ditambahkan di bawah ini
+        bot.send_message(call.message.chat.id, f"Silakan bayar melalui tautan ini:\n{payment_url}")
+
+    else:
+        bot.send_message(call.message.chat.id, "Gagal memproses pembayaran. Coba lagi nanti.")
 
 # Menjalankan bot
 bot.polling()
